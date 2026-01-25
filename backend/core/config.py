@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     vector_store_path: str = "./data/vector_store"
     embedding_model: str = "embed-english-v3.0"
     rerank_model: str = "rerank-english-v3.0"
-    generation_model: str = "command-r-plus"
+    generation_model: str = "command-r-plus-08-2024"
 
     # Agent Settings
     max_agent_iterations: int = 10

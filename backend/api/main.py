@@ -114,6 +114,60 @@ class QueryResponse(BaseModel):
     metadata: Dict[str, Any]
 
 
+class PortfolioAnalysisRequest(BaseModel):
+    """Request model for portfolio analysis."""
+    portfolio: Dict[str, float] = Field(..., description="Portfolio weights by ticker")
+    benchmark: str = Field("SPY", description="Benchmark ticker")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "portfolio": {"AAPL": 0.4, "MSFT": 0.3, "GOOGL": 0.3},
+                "benchmark": "SPY"
+            }
+        }
+
+
+class ValuationRequest(BaseModel):
+    """Request model for company valuation."""
+    ticker: str = Field(..., description="Stock ticker")
+    method: str = Field("dcf", description="Valuation method")
+
+
+class ContractReviewRequest(BaseModel):
+    """Request model for contract review."""
+    contract_text: str = Field(..., description="Contract text to analyze")
+    focus_areas: Optional[List[str]] = Field(None, description="Specific areas to focus on")
+
+
+class ComplianceCheckRequest(BaseModel):
+    """Request model for compliance check."""
+    document_text: str = Field(..., description="Document text to check")
+    regulations: List[str] = Field(["GDPR", "CCPA"], description="Regulations to check against")
+
+
+class ClinicalParseRequest(BaseModel):
+    """Request model for clinical note parsing."""
+    clinical_text: str = Field(..., description="Clinical note text")
+    note_type: str = Field("progress_note", description="Type of clinical note")
+
+
+class DrugInteractionsRequest(BaseModel):
+    """Request model for drug interaction check."""
+    medications: List[str] = Field(..., description="List of medications")
+
+
+class ICDCodesRequest(BaseModel):
+    """Request model for ICD code suggestions."""
+    clinical_text: str = Field(..., description="Clinical text for coding")
+
+
+class MultiAgentRequest(BaseModel):
+    """Request model for multi-agent queries."""
+    query: str = Field(..., description="Query to process")
+    agents: List[str] = Field(..., description="List of agents to use")
+
+
 # Startup/Shutdown Events
 @app.on_event("startup")
 async def startup_event():
@@ -127,14 +181,14 @@ async def startup_event():
     # Initialize orchestrator with all agents
     orchestrator = AgentOrchestrator(rag_engine=rag_engine)
 
-    print(f"🚀 {settings.app_name} v{settings.app_version} started")
-    print(f"📊 Agents available: {[a.value for a in AgentType]}")
+    print(f"[STARTUP] {settings.app_name} v{settings.app_version} started")
+    print(f"[AGENTS] Available: {[a.value for a in AgentType]}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown."""
-    print("👋 Shutting down Enterprise AI Agent Platform")
+    print("[SHUTDOWN] Enterprise AI Agent Platform")
 
 
 # API Endpoints
@@ -297,99 +351,77 @@ async def upload_documents(upload: DocumentUpload):
 
 # Finance-specific endpoints
 @app.post("/finance/portfolio-analysis", tags=["Finance"])
-async def analyze_portfolio(
-    portfolio: Dict[str, float] = Query(..., description="Portfolio weights by ticker"),
-    benchmark: str = Query("SPY", description="Benchmark ticker")
-):
+async def analyze_portfolio(request: PortfolioAnalysisRequest):
     """Analyze portfolio risk metrics."""
-    query = f"Calculate risk metrics for portfolio: {portfolio} against benchmark {benchmark}"
+    query = f"Calculate risk metrics for portfolio: {request.portfolio} against benchmark {request.benchmark}"
     result = await orchestrator.run(query, force_agents=[AgentType.FINANCE])
     return {"analysis": result.answer}
 
 
 @app.post("/finance/valuation", tags=["Finance"])
-async def company_valuation(
-    ticker: str = Query(..., description="Stock ticker"),
-    method: str = Query("dcf", description="Valuation method")
-):
+async def company_valuation(request: ValuationRequest):
     """Perform company valuation analysis."""
-    query = f"Perform {method} valuation analysis for {ticker}"
+    query = f"Perform {request.method} valuation analysis for {request.ticker}"
     result = await orchestrator.run(query, force_agents=[AgentType.FINANCE])
     return {"valuation": result.answer}
 
 
 # Legal-specific endpoints
 @app.post("/legal/contract-review", tags=["Legal"])
-async def review_contract(
-    contract_text: str,
-    focus_areas: Optional[List[str]] = None
-):
+async def review_contract(request: ContractReviewRequest):
     """Review and analyze a contract."""
-    query = f"Analyze this contract and extract key clauses: {contract_text[:1000]}..."
+    query = f"Analyze this contract and extract key clauses: {request.contract_text[:1000]}..."
     result = await orchestrator.run(query, force_agents=[AgentType.LEGAL])
     return {"analysis": result.answer}
 
 
 @app.post("/legal/compliance-check", tags=["Legal"])
-async def check_compliance(
-    document_text: str,
-    regulations: List[str] = Query(["GDPR", "CCPA"])
-):
+async def check_compliance(request: ComplianceCheckRequest):
     """Check document for regulatory compliance."""
-    query = f"Check this document for {', '.join(regulations)} compliance: {document_text[:1000]}..."
+    query = f"Check this document for {', '.join(request.regulations)} compliance: {request.document_text[:1000]}..."
     result = await orchestrator.run(query, force_agents=[AgentType.LEGAL])
     return {"compliance": result.answer}
 
 
 # Healthcare-specific endpoints
 @app.post("/healthcare/clinical-parse", tags=["Healthcare"])
-async def parse_clinical_note(
-    clinical_text: str,
-    note_type: str = Query("progress_note")
-):
+async def parse_clinical_note(request: ClinicalParseRequest):
     """Parse and structure a clinical note."""
-    query = f"Parse this {note_type}: {clinical_text[:1000]}..."
+    query = f"Parse this {request.note_type}: {request.clinical_text[:1000]}..."
     result = await orchestrator.run(query, force_agents=[AgentType.HEALTHCARE])
     return {"parsed": result.answer}
 
 
 @app.post("/healthcare/drug-interactions", tags=["Healthcare"])
-async def check_drug_interactions(
-    medications: List[str]
-):
+async def check_drug_interactions(request: DrugInteractionsRequest):
     """Check for drug-drug interactions."""
-    query = f"Check for interactions between: {', '.join(medications)}"
+    query = f"Check for interactions between: {', '.join(request.medications)}"
     result = await orchestrator.run(query, force_agents=[AgentType.HEALTHCARE])
     return {"interactions": result.answer}
 
 
 @app.post("/healthcare/icd-codes", tags=["Healthcare"])
-async def suggest_icd_codes(
-    clinical_text: str
-):
+async def suggest_icd_codes(request: ICDCodesRequest):
     """Suggest ICD-10 codes from clinical text."""
-    query = f"Suggest ICD-10 codes for: {clinical_text[:1000]}..."
+    query = f"Suggest ICD-10 codes for: {request.clinical_text[:1000]}..."
     result = await orchestrator.run(query, force_agents=[AgentType.HEALTHCARE])
     return {"codes": result.answer}
 
 
 # Multi-agent endpoint
 @app.post("/multi-agent", tags=["Multi-Agent"])
-async def multi_agent_query(
-    query: str,
-    agents: List[str]
-):
+async def multi_agent_query(request: MultiAgentRequest):
     """
     Execute a query across multiple agents simultaneously.
 
     Useful for cross-domain queries requiring expertise from multiple areas.
     """
     try:
-        force_agents = [AgentType(a.lower()) for a in agents]
+        force_agents = [AgentType(a.lower()) for a in request.agents]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid agent type: {e}")
 
-    result = await orchestrator.run(query, force_agents=force_agents)
+    result = await orchestrator.run(request.query, force_agents=force_agents)
 
     return {
         "synthesized_answer": result.answer,

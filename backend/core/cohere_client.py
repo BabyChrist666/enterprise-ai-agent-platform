@@ -141,52 +141,50 @@ class CohereRAGEngine:
         Returns:
             Generated text or async generator for streaming
         """
-        # Build context-aware prompt
-        messages = []
+        # Build the full message with context if provided
+        full_message = prompt
 
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-
-        # Add context as documents for RAG
-        documents = None
         if context:
-            documents = [
-                {"id": doc.id, "data": {"text": doc.content, **doc.metadata}}
+            context_text = "\n\n".join([
+                f"[Document {doc.id}]: {doc.content}"
                 for doc in context
-            ]
+            ])
+            full_message = f"Context:\n{context_text}\n\nQuestion: {prompt}"
 
-        messages.append({"role": "user", "content": prompt})
+        # Build preamble from system prompt
+        preamble = system_prompt or "You are a helpful AI assistant."
 
         if stream:
-            return self._stream_generate(messages, documents, temperature, max_tokens)
+            return self._stream_generate(full_message, preamble, temperature, max_tokens)
 
+        # Use Cohere v5 API with 'message' parameter
         response = await self.async_client.chat(
             model=self.generation_model,
-            messages=messages,
-            documents=documents,
+            message=full_message,
+            preamble=preamble,
             temperature=temperature,
             max_tokens=max_tokens
         )
 
-        return response.message.content[0].text
+        return response.text
 
     async def _stream_generate(
         self,
-        messages: List[Dict],
-        documents: Optional[List[Dict]],
+        message: str,
+        preamble: str,
         temperature: float,
         max_tokens: int
     ):
         """Stream generation for real-time responses."""
         async for event in self.async_client.chat_stream(
             model=self.generation_model,
-            messages=messages,
-            documents=documents,
+            message=message,
+            preamble=preamble,
             temperature=temperature,
             max_tokens=max_tokens
         ):
-            if event.type == "content-delta":
-                yield event.delta.message.content.text
+            if hasattr(event, 'text'):
+                yield event.text
 
 
 class VectorStore:
