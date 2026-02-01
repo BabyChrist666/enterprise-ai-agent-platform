@@ -381,18 +381,33 @@ class CustomAgent(BaseAgent):
 
 ---
 
-## ∞ TESTING
+## ∞ TESTING & EVALUATION
 
 ```bash
-# Run all tests
+# Run all tests (46 tests)
 pytest
 
 # With coverage
 pytest --cov=backend --cov-report=html
 
-# Specific test file
-pytest tests/test_finance_agent.py -v
+# Run evaluation framework
+python -m backend.evaluation.run_eval --dataset routing --routing-only
+python -m backend.evaluation.run_eval --dataset full
+python -m backend.evaluation.run_eval --dataset full --output results.json
 ```
+
+### Evaluation Framework
+
+Built-in evaluation system measuring agent performance across 4 dimensions:
+
+| Dimension | What It Measures |
+|:----------|:-----------------|
+| **Routing Accuracy** | Does the orchestrator route queries to the correct domain agent? |
+| **Tool Selection** | Does the agent pick the right tools? (precision & recall) |
+| **Response Quality** | Does the response contain expected information? (keyword coverage) |
+| **Latency** | End-to-end timing with p50/p95/p99 percentiles |
+
+Includes 27 evaluation cases with ground truth labels across finance, legal, healthcare, and multi-agent scenarios.
 
 ---
 
@@ -404,11 +419,11 @@ pytest tests/test_finance_agent.py -v
 [■■■■■■■■■■] Smart orchestration
 [■■■■■■■■■■] RAG with Cohere Embed + Rerank
 [■■■■■■■■■■] FastAPI backend
+[■■■■■■■■■■] Evaluation framework
 [□□□□□□□□□□] React dashboard frontend
 [□□□□□□□□□□] Vector store integrations
 [□□□□□□□□□□] Authentication & multi-tenancy
 [□□□□□□□□□□] Agent memory & history
-[□□□□□□□□□□] Custom agent builder UI
 ```
 
 ---
@@ -428,8 +443,12 @@ enterprise-ai-agent-platform/
 │   │   ├── base_agent.py     # Base agent class
 │   │   ├── orchestrator.py   # Agent orchestration
 │   │   └── rag.py            # RAG pipeline
-│   └── tools/                # Domain-specific tools
-├── tests/                    # Test suite
+│   ├── evaluation/
+│   │   ├── datasets.py       # 27 eval cases with ground truth
+│   │   ├── evaluator.py      # Core evaluation engine
+│   │   ├── metrics.py        # Metrics & reporting
+│   │   └── run_eval.py       # CLI runner
+│   └── tests/                # Test suite (46 tests)
 ├── requirements.txt
 └── README.md
 ```
