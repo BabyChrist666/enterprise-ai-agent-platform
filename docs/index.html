@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise AI Agent Platform</title>
+    <meta name="description" content="Multi-domain AI agent system with specialized agents for finance, legal, and healthcare. Intelligent routing, parallel execution, RAG-powered knowledge retrieval.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #050507;
+            --bg-secondary: #0a0a0f;
+            --bg-card: #0d0d14;
+            --accent: #6e56cf;
+            --accent-glow: #7c66dc;
+            --accent-dim: rgba(110,86,207,0.12);
+            --accent-border: rgba(110,86,207,0.25);
+            --text-primary: #ededef;
+            --text-secondary: #9494a0;
+            --text-tertiary: #5e5e6e;
+            --border: rgba(255,255,255,0.06);
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ── Ambient Background ── */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .ambient-bg .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.35;
+        }
+
+        .ambient-bg .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(110,86,207,0.18) 0%, transparent 70%);
+            top: -10%;
+            left: -10%;
+            animation: drift-1 25s ease-in-out infinite;
+        }
+
+        .ambient-bg .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(110,86,207,0.12) 0%, transparent 70%);
+            bottom: -15%;
+            right: -10%;
+            animation: drift-2 30s ease-in-out infinite;
+        }
+
+        .ambient-bg .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(110,86,207,0.08) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: drift-3 20s ease-in-out infinite;
+        }
+
+        @keyframes drift-1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(80px, 40px) scale(1.1); }
+            66% { transform: translate(-40px, 80px) scale(0.95); }
+        }
+
+        @keyframes drift-2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-60px, -40px) scale(1.05); }
+            66% { transform: translate(40px, -60px) scale(0.9); }
+        }
+
+        @keyframes drift-3 {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-45%, -55%) scale(1.15); }
+        }
+
+        /* ── Noise Overlay ── */
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+
+        /* ── Layout ── */
+        .container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        section {
+            padding: 100px 0;
+        }
+
+        /* ── Navigation ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(5,5,7,0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--accent-glow);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s;
+            letter-spacing: 0.01em;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 16px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            border-radius: 8px;
+            color: var(--accent-glow);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-github:hover {
+            background: rgba(110,86,207,0.2);
+            border-color: rgba(110,86,207,0.4);
+            color: #fff;
+        }
+
+        .nav-github svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .mobile-toggle span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: currentColor;
+            margin: 4px 0;
+            border-radius: 1px;
+            transition: all 0.3s;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            padding: 160px 0 80px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--accent-glow);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+        }
+
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-glow);
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero h1 {
+            font-size: clamp(36px, 5.5vw, 64px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(16px, 2vw, 19px);
+            color: var(--text-secondary);
+            max-width: 580px;
+            margin: 0 auto 44px;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: var(--accent);
+            color: #fff;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.25s;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-glow);
+            box-shadow: 0 0 30px rgba(110,86,207,0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.25s;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-border);
+            background: rgba(110,86,207,0.06);
+        }
+
+        .btn-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ── Stats ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin: 0 auto 0;
+            max-width: 800px;
+        }
+
+        .stat-item {
+            background: var(--bg-card);
+            padding: 32px 20px;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .stat-item:hover {
+            background: rgba(110,86,207,0.04);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-glow);
+            font-family: var(--font-mono);
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 500;
+        }
+
+        /* ── Section Headers ── */
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+        }
+
+        .section-label-line {
+            width: 20px;
+            height: 1px;
+            background: var(--accent-border);
+        }
+
+        .section-title {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 14px;
+            line-height: 1.15;
+        }
+
+        .section-desc {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 540px;
+            line-height: 1.7;
+        }
+
+        .section-header {
+            margin-bottom: 56px;
+        }
+
+        .section-header--center {
+            text-align: center;
+        }
+
+        .section-header--center .section-desc {
+            margin: 0 auto;
+        }
+
+        /* ── Feature Cards ── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 36px 30px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .feature-card:hover {
+            background: rgba(110,86,207,0.04);
+        }
+
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-border), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover::after {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: var(--accent-glow);
+        }
+
+        .feature-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* ── Architecture ── */
+        .arch-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 48px 40px;
+            overflow-x: auto;
+        }
+
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            min-width: 700px;
+            flex-wrap: nowrap;
+        }
+
+        .arch-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .arch-node-box {
+            padding: 14px 22px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .arch-node-box:hover {
+            border-color: var(--accent-border);
+            background: var(--accent-dim);
+        }
+
+        .arch-node-box--accent {
+            border-color: var(--accent-border);
+            background: var(--accent-dim);
+            color: var(--accent-glow);
+        }
+
+        .arch-node-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+        }
+
+        .arch-arrow {
+            color: var(--text-tertiary);
+            font-size: 20px;
+            padding: 0 16px;
+            flex-shrink: 0;
+            font-family: var(--font-mono);
+        }
+
+        .arch-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .arch-group-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            text-align: center;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .arch-group-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .arch-group-item {
+            padding: 10px 18px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .arch-group-item:hover {
+            border-color: var(--accent-border);
+            background: var(--accent-dim);
+        }
+
+        .arch-group-item--finance { color: #4ade80; }
+        .arch-group-item--legal { color: #60a5fa; }
+        .arch-group-item--health { color: #f472b6; }
+
+        .arch-side-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .arch-side-item {
+            padding: 10px 18px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .arch-side-item:hover {
+            border-color: var(--accent-border);
+        }
+
+        /* ── Evaluation ── */
+        .eval-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .eval-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 32px 28px;
+            transition: all 0.3s;
+        }
+
+        .eval-card:hover {
+            border-color: var(--accent-border);
+        }
+
+        .eval-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .eval-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .eval-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .eval-metric {
+            padding: 4px 12px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent-glow);
+            font-family: var(--font-mono);
+        }
+
+        .eval-bar {
+            margin-top: 16px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .eval-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+            border-radius: 6px;
+            transition: width 1s ease-out;
+        }
+
+        .eval-bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+        }
+
+        /* ── Code Tabs ── */
+        .code-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .code-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-tab {
+            padding: 14px 24px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            font-family: var(--font-sans);
+        }
+
+        .code-tab:hover {
+            color: var(--text-secondary);
+        }
+
+        .code-tab.active {
+            color: var(--accent-glow);
+        }
+
+        .code-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .code-panel {
+            display: none;
+            padding: 28px;
+        }
+
+        .code-panel.active {
+            display: block;
+        }
+
+        .code-panel pre {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            overflow-x: auto;
+        }
+
+        .code-panel pre .comment {
+            color: var(--text-tertiary);
+        }
+
+        .code-panel pre .cmd {
+            color: var(--accent-glow);
+        }
+
+        .code-panel pre .str {
+            color: #4ade80;
+        }
+
+        .code-panel pre .flag {
+            color: #f472b6;
+        }
+
+        /* ── Tech Stack ── */
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .tech-tag {
+            padding: 8px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            font-family: var(--font-mono);
+        }
+
+        .tech-tag:hover {
+            border-color: var(--accent-border);
+            color: var(--accent-glow);
+            background: var(--accent-dim);
+        }
+
+        /* ── CTA ── */
+        .cta {
+            text-align: center;
+            padding: 100px 0;
+        }
+
+        .cta-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 64px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-border), transparent);
+        }
+
+        .cta-box h2 {
+            font-size: clamp(24px, 3.5vw, 36px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 14px;
+        }
+
+        .cta-box p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            max-width: 460px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+
+        .cta-actions {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 0;
+        }
+
+        footer .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .footer-left {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .footer-left a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-left a:hover {
+            color: var(--accent-glow);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-secondary);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 64px;
+                left: 0;
+                right: 0;
+                background: rgba(5,5,7,0.95);
+                backdrop-filter: blur(20px);
+                flex-direction: column;
+                padding: 20px 24px;
+                gap: 16px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .eval-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-diagram {
+                padding: 28px 20px;
+            }
+
+            .hero {
+                padding: 130px 0 60px;
+            }
+
+            section {
+                padding: 70px 0;
+            }
+
+            footer .container {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background -->
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Noise Overlay -->
+    <div class="noise-overlay"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <a href="#" class="nav-logo">
+                <div class="nav-logo-icon">E</div>
+                Enterprise AI
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#evaluation">Evaluation</a></li>
+                <li>
+                    <a href="https://github.com/BabyChrist666/enterprise-ai-agent-platform" target="_blank" class="nav-github">
+                        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                        GitHub
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                Enterprise AI
+            </div>
+            <h1>Multi-domain AI agents<br>for the real world</h1>
+            <p class="hero-subtitle">Orchestrate specialized AI agents across finance, legal, and healthcare with intelligent routing, parallel execution, and RAG-powered knowledge retrieval.</p>
+            <div class="hero-actions">
+                <a href="https://github.com/BabyChrist666/enterprise-ai-agent-platform" target="_blank" class="btn-primary">
+                    <svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    View on GitHub
+                </a>
+                <a href="#features" class="btn-secondary">
+                    Explore Features
+                    <svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12l-4.5-4.5L4.91 6.09 7.5 8.67V3h1v5.67l2.59-2.58L12.5 7.5z"/></svg>
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div style="margin-top: 64px;">
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Domains</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">6</div>
+                        <div class="stat-label">Agent Types</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">27</div>
+                        <div class="stat-label">Eval Cases</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">23</div>
+                        <div class="stat-label">Tests Passing</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+        <div class="container">
+            <div class="section-header section-header--center">
+                <div class="section-label">
+                    <span class="section-label-line"></span>
+                    Capabilities
+                    <span class="section-label-line"></span>
+                </div>
+                <h2 class="section-title">Intelligent agent orchestration</h2>
+                <p class="section-desc">Purpose-built agents that understand domain-specific context, tools, and workflows across enterprise verticals.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <h3>Domain Routing</h3>
+                    <p>Intelligent classification of queries to the correct specialized agent. Automatically detects finance, legal, and healthcare intents with high accuracy.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    </div>
+                    <h3>Multi-Agent Execution</h3>
+                    <p>Parallel execution of multiple domain agents for cross-domain queries. Coordinate responses from finance, legal, and healthcare simultaneously.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </div>
+                    <h3>RAG Knowledge</h3>
+                    <p>Retrieval-Augmented Generation with ChromaDB vector store for domain-specific knowledge. Ground agent responses in verified enterprise data.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    </div>
+                    <h3>Tool Orchestration</h3>
+                    <p>Domain-specific tool integration for each agent. Finance tools for market data, legal tools for case lookup, healthcare tools for clinical references.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                    </div>
+                    <h3>Evaluation Framework</h3>
+                    <p>Comprehensive test suite with 27 evaluation cases across routing accuracy, tool usage, and response quality metrics. 23 tests currently passing.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    </div>
+                    <h3>Async Pipeline</h3>
+                    <p>Fully asynchronous request processing with FastAPI. Non-blocking agent execution enables high-throughput parallel query handling.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section id="architecture">
+        <div class="container">
+            <div class="section-header section-header--center">
+                <div class="section-label">
+                    <span class="section-label-line"></span>
+                    System Design
+                    <span class="section-label-line"></span>
+                </div>
+                <h2 class="section-title">Architecture overview</h2>
+                <p class="section-desc">A modular pipeline from client request to domain-specific agent execution with tool and knowledge integration.</p>
+            </div>
+
+            <div class="arch-diagram">
+                <div class="arch-flow">
+                    <!-- Client -->
+                    <div class="arch-node">
+                        <div class="arch-node-label">Client</div>
+                        <div class="arch-node-box">Next.js Frontend</div>
+                    </div>
+
+                    <div class="arch-arrow">&rarr;</div>
+
+                    <!-- API -->
+                    <div class="arch-node">
+                        <div class="arch-node-label">API Layer</div>
+                        <div class="arch-node-box arch-node-box--accent">FastAPI</div>
+                    </div>
+
+                    <div class="arch-arrow">&rarr;</div>
+
+                    <!-- Router -->
+                    <div class="arch-node">
+                        <div class="arch-node-label">Intelligence</div>
+                        <div class="arch-node-box arch-node-box--accent">Domain Router</div>
+                    </div>
+
+                    <div class="arch-arrow">&rarr;</div>
+
+                    <!-- Agents -->
+                    <div class="arch-group">
+                        <div class="arch-group-label">Specialized Agents</div>
+                        <div class="arch-group-items">
+                            <div class="arch-group-item arch-group-item--finance">Finance Agent</div>
+                            <div class="arch-group-item arch-group-item--legal">Legal Agent</div>
+                            <div class="arch-group-item arch-group-item--health">Healthcare Agent</div>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">&rarr;</div>
+
+                    <!-- Tools + RAG -->
+                    <div class="arch-side-group">
+                        <div class="arch-group-label">Integrations</div>
+                        <div class="arch-side-item">Domain Tools</div>
+                        <div class="arch-side-item">RAG / ChromaDB</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Evaluation -->
+    <section id="evaluation">
+        <div class="container">
+            <div class="section-header section-header--center">
+                <div class="section-label">
+                    <span class="section-label-line"></span>
+                    Quality Assurance
+                    <span class="section-label-line"></span>
+                </div>
+                <h2 class="section-title">Evaluation framework</h2>
+                <p class="section-desc">Rigorous testing across routing, tool usage, and response quality to ensure production-grade reliability.</p>
+            </div>
+
+            <div class="eval-grid">
+                <div class="eval-card">
+                    <h3>Routing Accuracy</h3>
+                    <p>Validates that queries are classified and dispatched to the correct domain agent across finance, legal, and healthcare categories.</p>
+                    <div class="eval-metrics">
+                        <span class="eval-metric">precision</span>
+                        <span class="eval-metric">recall</span>
+                        <span class="eval-metric">f1-score</span>
+                    </div>
+                    <div class="eval-bar">
+                        <div class="eval-bar-fill" style="width: 92%;"></div>
+                    </div>
+                    <div class="eval-bar-label">
+                        <span>Routing Tests</span>
+                        <span>92%</span>
+                    </div>
+                </div>
+                <div class="eval-card">
+                    <h3>Tool Invocation</h3>
+                    <p>Ensures agents select and invoke the correct domain-specific tools with properly structured parameters for each query type.</p>
+                    <div class="eval-metrics">
+                        <span class="eval-metric">tool_selection</span>
+                        <span class="eval-metric">param_accuracy</span>
+                    </div>
+                    <div class="eval-bar">
+                        <div class="eval-bar-fill" style="width: 88%;"></div>
+                    </div>
+                    <div class="eval-bar-label">
+                        <span>Tool Tests</span>
+                        <span>88%</span>
+                    </div>
+                </div>
+                <div class="eval-card">
+                    <h3>Response Quality</h3>
+                    <p>Measures completeness, accuracy, and domain relevance of generated responses against gold-standard reference answers.</p>
+                    <div class="eval-metrics">
+                        <span class="eval-metric">relevance</span>
+                        <span class="eval-metric">completeness</span>
+                        <span class="eval-metric">accuracy</span>
+                    </div>
+                    <div class="eval-bar">
+                        <div class="eval-bar-fill" style="width: 85%;"></div>
+                    </div>
+                    <div class="eval-bar-label">
+                        <span>Quality Tests</span>
+                        <span>85%</span>
+                    </div>
+                </div>
+                <div class="eval-card">
+                    <h3>Overall Test Suite</h3>
+                    <p>Combined evaluation across all 27 test cases covering end-to-end agent behavior from routing through final response generation.</p>
+                    <div class="eval-metrics">
+                        <span class="eval-metric">27 cases</span>
+                        <span class="eval-metric">23 passing</span>
+                        <span class="eval-metric">85.2%</span>
+                    </div>
+                    <div class="eval-bar">
+                        <div class="eval-bar-fill" style="width: 85.2%;"></div>
+                    </div>
+                    <div class="eval-bar-label">
+                        <span>All Tests</span>
+                        <span>23 / 27</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code / Quick Start -->
+    <section id="quickstart">
+        <div class="container">
+            <div class="section-header section-header--center">
+                <div class="section-label">
+                    <span class="section-label-line"></span>
+                    Quick Start
+                    <span class="section-label-line"></span>
+                </div>
+                <h2 class="section-title">Up and running in minutes</h2>
+                <p class="section-desc">Clone, install dependencies, and launch the platform with a few commands.</p>
+            </div>
+
+            <div class="code-section">
+                <div class="code-tabs">
+                    <button class="code-tab active" data-tab="install">Install</button>
+                    <button class="code-tab" data-tab="server">Run Server</button>
+                    <button class="code-tab" data-tab="eval">Run Eval</button>
+                </div>
+                <div class="code-panel active" id="tab-install">
+                    <pre><span class="comment"># Clone the repository</span>
+<span class="cmd">$</span> git clone https://github.com/BabyChrist666/enterprise-ai-agent-platform.git
+<span class="cmd">$</span> cd enterprise-ai-agent-platform
+
+<span class="comment"># Install Python dependencies</span>
+<span class="cmd">$</span> pip install <span class="flag">-r</span> requirements.txt
+
+<span class="comment"># Set up environment variables</span>
+<span class="cmd">$</span> cp .env.example .env
+<span class="comment"># Add your Cohere API key to .env</span>
+
+<span class="comment"># Install frontend dependencies</span>
+<span class="cmd">$</span> cd frontend && npm install</pre>
+                </div>
+                <div class="code-panel" id="tab-server">
+                    <pre><span class="comment"># Start the FastAPI backend</span>
+<span class="cmd">$</span> uvicorn backend.api.main:app <span class="flag">--reload</span> <span class="flag">--port</span> <span class="str">8000</span>
+
+<span class="comment"># In a separate terminal, start the frontend</span>
+<span class="cmd">$</span> cd frontend
+<span class="cmd">$</span> npm run dev
+
+<span class="comment"># API available at http://localhost:8000</span>
+<span class="comment"># Frontend available at http://localhost:3000</span></pre>
+                </div>
+                <div class="code-panel" id="tab-eval">
+                    <pre><span class="comment"># Run the full evaluation suite</span>
+<span class="cmd">$</span> pytest backend/tests/ <span class="flag">-v</span>
+
+<span class="comment"># Run specific domain tests</span>
+<span class="cmd">$</span> pytest backend/tests/test_agents.py <span class="flag">-v</span> <span class="flag">-k</span> <span class="str">"finance"</span>
+<span class="cmd">$</span> pytest backend/tests/test_agents.py <span class="flag">-v</span> <span class="flag">-k</span> <span class="str">"legal"</span>
+<span class="cmd">$</span> pytest backend/tests/test_agents.py <span class="flag">-v</span> <span class="flag">-k</span> <span class="str">"healthcare"</span>
+
+<span class="comment"># 27 test cases | 23 passing | 85.2% pass rate</span></pre>
+                </div>
+            </div>
+
+            <!-- Tech Stack -->
+            <div style="text-align: center; margin-top: 56px;">
+                <div class="section-label">
+                    <span class="section-label-line"></span>
+                    Built With
+                    <span class="section-label-line"></span>
+                </div>
+            </div>
+            <div class="tech-stack">
+                <span class="tech-tag">Python</span>
+                <span class="tech-tag">Cohere Command R+</span>
+                <span class="tech-tag">FastAPI</span>
+                <span class="tech-tag">Next.js</span>
+                <span class="tech-tag">ChromaDB</span>
+                <span class="tech-tag">Pydantic</span>
+                <span class="tech-tag">asyncio</span>
+                <span class="tech-tag">pytest</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <div class="container">
+            <div class="cta-box">
+                <h2>Deploy enterprise AI agents today</h2>
+                <p>Open source and ready for production. Clone the repository, configure your domains, and start orchestrating intelligent agents.</p>
+                <div class="cta-actions">
+                    <a href="https://github.com/BabyChrist666/enterprise-ai-agent-platform" target="_blank" class="btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                        Get Started
+                    </a>
+                    <a href="mailto:istiaqrafi39@gmail.com" class="btn-secondary">
+                        Contact
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-left">
+                Built by <a href="https://github.com/BabyChrist666" target="_blank">BabyChrist666</a>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/BabyChrist666/enterprise-ai-agent-platform" target="_blank">GitHub</a>
+                <a href="mailto:istiaqrafi39@gmail.com">Contact</a>
+                <a href="#features">Features</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Mobile menu toggle
+        const mobileToggle = document.getElementById('mobileToggle');
+        const navLinks = document.getElementById('navLinks');
+        mobileToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+        });
+
+        // Close mobile menu on link click
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('open');
+            });
+        });
+
+        // Code tabs
+        document.querySelectorAll('.code-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.tab;
+
+                document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById('tab-' + target).classList.add('active');
+            });
+        });
+
+        // Animate eval bars on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.eval-bar-fill').forEach(bar => {
+                        const width = bar.style.width;
+                        bar.style.width = '0%';
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                bar.style.width = width;
+                            });
+                        });
+                    });
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.2 });
+
+        document.querySelectorAll('.eval-card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
